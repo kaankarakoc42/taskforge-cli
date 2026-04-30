@@ -1,6 +1,46 @@
-# TaskForge CLI - Full Skeleton
+# 🚀 TaskForge CLI
 
-## Repo Structure
+> CLI tool to simulate and debug distributed task execution — locally or with a real backend.
+
+---
+
+## ⚡ What is this?
+
+TaskForge CLI is a **developer tool** for experimenting with:
+
+- async task execution  
+- retry strategies (backoff, failures)  
+- event streams  
+- DLQ analysis  
+
+Without needing:
+
+- Kafka  
+- PostgreSQL  
+- Kubernetes  
+
+---
+
+## 🧠 Core Idea
+
+TaskForge CLI has **two modes**:
+
+### 🟢 Local Mode (default)
+
+- Runs tasks locally  
+- Simulates retries & failures  
+- Streams fake events  
+- No setup required  
+
+### 🔵 Remote Mode
+
+- Connects to TaskForge backend  
+- Submits real tasks  
+- Streams real-time events via WebSocket  
+
+---
+
+## 📦 Repo Structure
 
 ```
 taskforge-cli/
@@ -29,43 +69,95 @@ taskforge-cli/
 └── LICENSE
 ```
 
-## Core Idea
+---
 
-TaskForge CLI is:
-
-- Sandbox (local mode)
-- Gateway (remote mode)
-
-## Local Mode
-
-- No Kafka
-- No DB
-- No backend required
-
-## Remote Mode
-
-- Connects to TaskForge API
-- Uses REST + WebSocket
-
-## Quick Start
+## ⚡ Quick Start
 
 ```bash
 go mod init github.com/yourname/taskforge-cli
 go get github.com/spf13/cobra@v1.8.1
 go mod tidy
-make run
+
+go run . run examples/hello.sh
+go run . simulate --fail-rate=0.5
+go run . watch
 ```
 
-## Philosophy
+---
 
-- CLI must stay lightweight
-- No distributed logic inside CLI
-- Backend owns orchestration
+## 🎯 Example Usage
 
-## Good First Issues
+```bash
+taskforge run examples/hello.sh
+taskforge simulate --fail-rate=0.7
+taskforge watch
+```
 
-- Add retry strategy
-- Improve CLI output
-- Implement remote client
-- Enhance DLQ analyzer
+---
 
+## 🔌 Remote Usage (coming soon)
+
+```bash
+taskforge run examples/hello.sh --remote
+taskforge watch --remote
+```
+
+---
+
+## 🧱 Philosophy
+
+- CLI = sandbox + gateway  
+- No distributed orchestration inside CLI  
+- Backend owns scheduling, queues, and execution  
+- Local mode must always work without infrastructure  
+
+---
+
+## 🚧 Roadmap
+
+- [ ] Remote API integration  
+- [ ] WebSocket event streaming  
+- [ ] Advanced retry strategies (jitter, policies)  
+- [ ] Plugin system for extensions  
+
+---
+
+## 🧩 Good First Issues
+
+- Add new retry strategy  
+- Improve CLI output formatting  
+- Implement remote client  
+- Enhance DLQ analyzer  
+
+---
+
+## 🔥 Why this exists
+
+Distributed systems are hard to test.
+
+TaskForge CLI lets you:
+
+- experiment locally  
+- debug retry behavior  
+- visualize task execution  
+
+Before deploying anything.
+
+---
+
+## 📌 Scope
+
+This CLI does NOT:
+
+- manage Kafka  
+- handle scheduling  
+- persist tasks  
+- run distributed workers  
+
+Those belong to the TaskForge backend.
+
+---
+
+## 🤝 Contributing
+
+See CONTRIBUTING.md for guidelines.
