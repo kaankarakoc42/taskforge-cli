@@ -2,6 +2,8 @@ package cmd
 
 import "github.com/spf13/cobra"
 
+var debug bool
+
 var rootCmd = &cobra.Command{
 	Use:   "taskforge",
 	Short: "TaskForge CLI executes dynamic local task executors",
@@ -10,4 +12,8 @@ var rootCmd = &cobra.Command{
 
 func Execute() error {
 	return rootCmd.Execute()
+}
+
+func init() {
+	rootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "Enable debug output for request/response details")
 }

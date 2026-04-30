@@ -34,7 +34,7 @@ var runCmd = &cobra.Command{
 
 		var c client.Client = client.NewLocalClient()
 		if useRemote {
-			c = client.NewRemoteClient(remoteBaseURL)
+			c = client.NewRemoteClient(remoteBaseURL, debug)
 		}
 
 		result, err := c.RunTask(context.Background(), executorName, params)
@@ -55,7 +55,7 @@ var runCmd = &cobra.Command{
 func init() {
 	runCmd.Flags().StringVarP(&paramsFile, "params", "p", "", "Path to JSON params file")
 	runCmd.Flags().BoolVar(&useRemote, "remote", false, "Use remote gateway mode (TODO)")
-	runCmd.Flags().StringVar(&remoteBaseURL, "api-base-url", "http://localhost:8080", "Backend API base URL for remote mode")
+	runCmd.Flags().StringVar(&remoteBaseURL, "api-base-url", "", "Optional backend API base URL override for remote mode")
 	_ = runCmd.MarkFlagRequired("params")
 	rootCmd.AddCommand(runCmd)
 }
