@@ -1,6 +1,6 @@
 # 🚀 TaskForge CLI
 
-> CLI tool to simulate and debug distributed task execution — locally or with a real backend.
+> Run, simulate, and debug distributed task executors — locally or via a backend.
 
 ---
 
@@ -9,9 +9,9 @@
 TaskForge CLI is a **developer tool** for experimenting with:
 
 - async task execution  
-- retry strategies (backoff, failures)  
-- event streams  
-- DLQ analysis  
+- retry / failure behavior  
+- event-driven patterns  
+- executor-based systems  
 
 Without needing:
 
@@ -23,141 +23,211 @@ Without needing:
 
 ## 🧠 Core Idea
 
-TaskForge CLI has **two modes**:
+TaskForge CLI is built around a **dynamic executor system**.
+
+```bash
+taskforge run <executor_name> --params <file.json>
+```
+
+Executors:
+
+- are registered dynamically  
+- receive JSON input  
+- return structured results  
+
+---
+
+## 🧱 Architecture Boundaries
+
+This CLI has **strict responsibilities**:
 
 ### 🟢 Local Mode (default)
 
-- Runs tasks locally  
-- Simulates retries & failures  
-- Streams fake events  
-- No setup required  
+- Runs executors directly  
+- Acts as a sandbox  
+- No infrastructure required  
 
-### 🔵 Remote Mode
+### 🔵 Remote Mode (`--remote`)
 
-- Connects to TaskForge backend  
-- Submits real tasks  
-- Streams real-time events via WebSocket  
+- Sends tasks to backend API  
+- Streams events  
+- **Must stay thin (no logic)**  
 
 ---
 
-## 📦 Repo Structure
+### ❌ Non-Goals
+
+The CLI does NOT:
+
+- implement orchestration  
+- implement scheduling  
+- manage workers  
+- connect to Kafka  
+- access databases  
+
+---
+
+## 📦 Project Structure
 
 ```
 taskforge-cli/
+├── main.go
+├── go.mod
 ├── cmd/
 │   ├── root.go
-│   ├── run.go
-│   ├── simulate.go
-│   ├── watch.go
-│   └── analyze.go
+│   └── run.go
 ├── internal/
-│   ├── client/
-│   ├── runner/
-│   ├── retry/
-│   ├── stream/
-│   ├── dlq/
-│   └── output/
-├── pkg/
-│   └── sdk/
+│   ├── executor/
+│   │   ├── executor.go
+│   │   └── registry.go
+│   ├── executors/
+│   │   └── api_health.go
+│   └── runner/
+│       └── runner.go
 ├── examples/
-├── docs/
-├── .github/
-├── go.mod
-├── Makefile
-├── README.md
-├── CONTRIBUTING.md
-└── LICENSE
+│   └── api_health.json
+└── README.md
 ```
 
 ---
 
-## ⚡ Quick Start
+## ⚙️ Dynamic Executor System
+
+### 1. Executor Interface
+
+```go
+type Executor interface {
+    Execute(ctx context.Context, params map[string]any) (any, error)
+}
+```
+
+---
+
+### 2. Registration
+
+```go
+func init() {
+    executor.Register("api_health", &APIHealthExecutor{})
+}
+```
+
+---
+
+### 3. Execution
 
 ```bash
-go mod init github.com/yourname/taskforge-cli
-go get github.com/spf13/cobra@v1.8.1
+taskforge run <executor_name> --params <file.json>
+```
+
+---
+
+## 🎯 Example
+
+```bash
+taskforge run api_health --params examples/api_health.json
+```
+
+### Params
+
+```json
+{
+  "url": "https://google.com",
+  "expected_status": 200
+}
+```
+
+### Output
+
+```json
+{
+  "url": "https://google.com",
+  "status_code": 200,
+  "healthy": true,
+  "latency_ms": 120
+}
+```
+
+---
+
+## 🔌 Built-in Executor
+
+### `api_health`
+
+Checks if an API endpoint is healthy.
+
+**Params:**
+
+- `url` (required)
+- `expected_status` (default: 200)
+- `timeout_seconds` (default: 5)
+
+---
+
+## 🚀 Quick Start
+
+```bash
 go mod tidy
 
-go run . run examples/hello.sh
-go run . simulate --fail-rate=0.5
-go run . watch
+go run . run api_health --params examples/api_health.json
 ```
 
 ---
 
-## 🎯 Example Usage
+## 🔌 Remote Mode (Gateway)
 
 ```bash
-taskforge run examples/hello.sh
-taskforge simulate --fail-rate=0.7
-taskforge watch
+go run . run api_health \
+  --params examples/api_health.json \
+  --remote \
+  --api-base-url http://localhost:8080
 ```
+
+### Status
+
+- 🚧 Not fully implemented yet  
+- Designed as a thin API/WebSocket client  
+
+### Design Rule
+
+Remote mode:
+
+- does NOT execute tasks  
+- does NOT implement logic  
+- only forwards and observes  
 
 ---
 
-## 🔌 Remote Usage (coming soon)
+## 🧩 Why this is useful
 
-```bash
-taskforge run examples/hello.sh --remote
-taskforge watch --remote
-```
-
----
-
-## 🧱 Philosophy
-
-- CLI = sandbox + gateway  
-- No distributed orchestration inside CLI  
-- Backend owns scheduling, queues, and execution  
-- Local mode must always work without infrastructure  
+- test task logic locally  
+- build executors without backend  
+- debug failure scenarios  
+- experiment with distributed system patterns  
 
 ---
 
 ## 🚧 Roadmap
 
-- [ ] Remote API integration  
-- [ ] WebSocket event streaming  
-- [ ] Advanced retry strategies (jitter, policies)  
-- [ ] Plugin system for extensions  
-
----
-
-## 🧩 Good First Issues
-
-- Add new retry strategy  
-- Improve CLI output formatting  
-- Implement remote client  
-- Enhance DLQ analyzer  
-
----
-
-## 🔥 Why this exists
-
-Distributed systems are hard to test.
-
-TaskForge CLI lets you:
-
-- experiment locally  
-- debug retry behavior  
-- visualize task execution  
-
-Before deploying anything.
-
----
-
-## 📌 Scope
-
-This CLI does NOT:
-
-- manage Kafka  
-- handle scheduling  
-- persist tasks  
-- run distributed workers  
-
-Those belong to the TaskForge backend.
+- [ ] Retry simulation (fail-rate, backoff)
+- [ ] Event streaming (`watch`)
+- [ ] Remote API integration
+- [ ] Plugin system for executors
 
 ---
 
 ## 🤝 Contributing
 
-See CONTRIBUTING.md for guidelines.
+Good areas:
+
+- new executors  
+- retry strategies  
+- CLI UX improvements  
+- output formatting  
+
+See `CONTRIBUTING.md`
+
+---
+
+## 🔥 TL;DR
+
+TaskForge CLI is a **playground for task execution logic** — without the overhead of distributed systems infrastructure.
