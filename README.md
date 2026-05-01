@@ -10,6 +10,7 @@ It is designed for two use cases:
 
 Task systems are often hard to iterate on because they depend on infrastructure.
 TaskForge lets you build and validate executor logic as plain Go code first, then run it through the same CLI in local or remote mode.
+The SDK now lives in a separate module: `github.com/kaankarakoc42/taskforge-sdk`.
 
 ## Project Structure
 
@@ -20,21 +21,18 @@ taskforge-cli/
 │   ├── client/
 │   ├── executors/
 │   └── runner/
-├── pkg/
-│   └── executor/            # public SDK: interface + registry
 ├── examples/
-│   ├── api_health.json
-│   └── custom-executor/
+│   └── api_health.json
 ├── CONTRIBUTING.md
 └── README.md
 ```
 
-## Public Executor SDK
+## SDK Dependency
 
-Import path:
+TaskForge CLI consumes the external SDK module:
 
 ```go
-import "taskforge-cli/pkg/executor"
+import "github.com/kaankarakoc42/taskforge-sdk/pkg/executor"
 ```
 
 Interface:
@@ -71,7 +69,7 @@ import (
     "context"
     "fmt"
 
-    "taskforge-cli/pkg/executor"
+    "github.com/kaankarakoc42/taskforge-sdk/pkg/executor"
 )
 
 type HelloExecutor struct{}
@@ -95,7 +93,8 @@ func init() {
 }
 ```
 
-See runnable sample: `examples/custom-executor/main.go`.
+See runnable SDK sample in the SDK repository:
+`taskforge-sdk/examples/custom-executor/main.go`.
 
 ## CLI Usage
 
@@ -128,7 +127,7 @@ Params:
 
 ## External Contributor Workflow
 
-1. Implement an executor using `pkg/executor`.
+1. Implement an executor using `github.com/kaankarakoc42/taskforge-sdk/pkg/executor`.
 2. Register it with `executor.Register(...)`.
 3. Run locally in your own Go program, or include it in a TaskForge-based binary.
 

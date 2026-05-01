@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/kaankarakoc42/taskforge-sdk/pkg/executor"
 	_ "taskforge-cli/internal/executors"
-	"taskforge-cli/pkg/executor"
 )
 
 func Run(ctx context.Context, executorName string, params map[string]any) (any, error) {

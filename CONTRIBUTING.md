@@ -2,7 +2,7 @@
 
 Thanks for helping improve TaskForge.
 
-TaskForge is now organized as a CLI plus a public executor SDK (`pkg/executor`).
+TaskForge is now organized as a CLI plus a separate public SDK module (`github.com/kaankarakoc42/taskforge-sdk/pkg/executor`).
 Contributions that improve extensibility and developer experience are especially welcome.
 
 ## Contribution Paths
@@ -16,7 +16,7 @@ Contributions that improve extensibility and developer experience are especially
 
 ### 2) Improve the SDK
 
-- Work in `pkg/executor`.
+- Work in the `taskforge-sdk` repository (`pkg/executor`).
 - Keep APIs simple, stable, and Go-idiomatic.
 - Favor backwards compatibility where possible.
 

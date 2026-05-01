@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"taskforge-cli/pkg/executor"
+	"github.com/kaankarakoc42/taskforge-sdk/pkg/executor"
 )
 
 type APIHealthExecutor struct{}
