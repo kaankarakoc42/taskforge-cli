@@ -45,6 +45,8 @@ func (c *RemoteClient) RunTask(ctx context.Context, executorName string, params 
 	}
 
 	payload := map[string]any{
+		// Newer backend contract requires "type"; keep "handler" for compatibility.
+		"type":    executorName,
 		"handler": executorName,
 		"params":  params,
 	}
