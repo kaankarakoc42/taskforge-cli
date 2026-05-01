@@ -98,7 +98,7 @@ var loginCmd = &cobra.Command{
 
 		cfg := config.Config{
 			APIBaseURL:   baseURL,
-			WebSocketURL: "ws://localhost:8090/ws",
+			WebSocketURL: config.DeriveWebSocketURL(baseURL),
 			Token:        token,
 		}
 		if err := config.SaveConfig(cfg); err != nil {

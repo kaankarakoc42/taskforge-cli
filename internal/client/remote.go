@@ -108,8 +108,14 @@ func (c *RemoteClient) Watch(ctx context.Context, taskID string) (<-chan Event, 
 	}
 
 	wsURL := strings.TrimSpace(cfg.WebSocketURL)
+	if strings.TrimSpace(c.baseURLOverride) != "" {
+		wsURL = config.DeriveWebSocketURL(c.baseURLOverride)
+	}
 	if wsURL == "" {
-		wsURL = "ws://localhost:8090/ws"
+		wsURL = config.DeriveWebSocketURL(cfg.APIBaseURL)
+	}
+	if wsURL == "" {
+		wsURL = config.DeriveWebSocketURL("")
 	}
 
 	header := http.Header{}

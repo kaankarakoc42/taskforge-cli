@@ -4,8 +4,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 type Config struct {
@@ -65,4 +67,32 @@ func configPath() (string, error) {
 	}
 
 	return filepath.Join(home, ".taskforge", "config.json"), nil
+}
+
+func DeriveWebSocketURL(baseURL string) string {
+	trimmed := strings.TrimSpace(baseURL)
+	if trimmed == "" {
+		return "ws://localhost:8090/ws"
+	}
+
+	u, err := url.Parse(trimmed)
+	if err != nil || strings.TrimSpace(u.Host) == "" {
+		return "ws://localhost:8090/ws"
+	}
+
+	switch strings.ToLower(strings.TrimSpace(u.Scheme)) {
+	case "https":
+		u.Scheme = "wss"
+	case "http":
+		u.Scheme = "ws"
+	case "wss", "ws":
+		// Keep as is.
+	default:
+		return "ws://localhost:8090/ws"
+	}
+
+	u.Path = "/ws"
+	u.RawQuery = ""
+	u.Fragment = ""
+	return u.String()
 }
