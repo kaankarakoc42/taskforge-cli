@@ -1,145 +1,62 @@
-# 🤝 Contributing to TaskForge CLI
+# Contributing to TaskForge
 
-Thanks for your interest in contributing.
+Thanks for helping improve TaskForge.
 
-This project is designed to be **contributor-friendly**, especially for developers who want to explore:
+TaskForge is now organized as a CLI plus a public executor SDK (`pkg/executor`).
+Contributions that improve extensibility and developer experience are especially welcome.
 
-- async task execution
-- retry strategies
-- event-driven systems
-- CLI tooling in Go
+## Contribution Paths
 
----
+### 1) Add New Executors
 
-## 🚀 Getting Started
+- Add built-in executors under `internal/executors`.
+- Implement the public `executor.Executor` interface.
+- Register in `init()` with `executor.Register(...)`.
+- Include sample params in `examples/` when useful.
+
+### 2) Improve the SDK
+
+- Work in `pkg/executor`.
+- Keep APIs simple, stable, and Go-idiomatic.
+- Favor backwards compatibility where possible.
+
+### 3) Add Integrations
+
+- Improve remote API and WebSocket flow in `internal/client`.
+- Keep CLI behavior thin: transport and UX only, no orchestration logic.
+
+## Local Setup
 
 ```bash
-git clone https://github.com/yourname/taskforge-cli
+git clone <your-fork-url>
 cd taskforge-cli
-
 go mod tidy
-make run
-```
-
-Test basic functionality:
-
-```bash
-go run . run examples/hello.sh
-go run . simulate --fail-rate=0.5
-go run . watch
-```
-
----
-
-## 🧠 Project Philosophy
-
-TaskForge CLI follows a strict boundary:
-
-### ✅ What belongs here
-
-- Local task execution (sandbox)
-- Retry simulation
-- Event visualization
-- CLI UX
-- Offline analysis (DLQ, logs)
-- Remote API interaction (thin layer)
-
-### ❌ What does NOT belong here
-
-- Kafka integration
-- Scheduler logic
-- Distributed orchestration
-- Database access
-- Worker coordination
-
-👉 These belong to the **TaskForge backend**, not the CLI.
-
----
-
-## 🧱 Architecture Overview
-
-The CLI operates in two modes:
-
-### 🟢 Local Mode (default)
-
-- In-memory execution
-- Fake event stream
-- Retry simulation
-- No infrastructure required
-
-### 🔵 Remote Mode
-
-- Connects to TaskForge API
-- Streams real events via WebSocket
-- Delegates execution to backend
-
----
-
-## 📂 Where to Contribute
-
-### 🟢 Beginner Friendly
-
-- `internal/retry/` → add new strategies
-- `internal/output/` → improve formatting
-- `cmd/` → enhance CLI UX & help messages
-
-### 🟡 Intermediate
-
-- `internal/stream/` → event streaming improvements
-- `internal/dlq/` → analysis & grouping logic
-
-### 🔴 Advanced
-
-- `internal/client/remote.go` → API integration
-- WebSocket streaming implementation
-- Plugin system for retry strategies
-
----
-
-## 🧩 Good First Issues
-
-Look for issues labeled:
-
-- `good first issue`
-- `help wanted`
-
----
-
-## 🧪 Testing
-
-```bash
 go test ./...
 ```
 
----
+## Coding Guidelines
 
-## 📏 Contribution Rules
+- Keep PRs focused and small.
+- Avoid unnecessary dependencies.
+- Preserve compatibility for existing CLI commands.
+- Prefer clear naming over abstraction-heavy designs.
 
-- Keep PRs small and focused  
-- Follow existing project structure  
-- Avoid adding heavy dependencies  
-- Do not mix backend logic into CLI  
+## Adding an Executor Checklist
 
----
+- [ ] Implements `Name() string`
+- [ ] Implements `Execute(context.Context, map[string]interface{}) (executor.Result, error)`
+- [ ] Registers itself in `init()`
+- [ ] Has basic docs or example input
+- [ ] Works via `taskforge run <name> --params <file>`
 
-## 🧨 Common Mistakes
+## Pull Requests
 
-❌ Adding Kafka logic into CLI  
-❌ Implementing distributed execution  
-❌ Tight coupling with backend  
+1. Fork and create a feature branch.
+2. Add tests when behavior changes.
+3. Run `go test ./...`.
+4. Open a PR with:
+   - problem statement
+   - approach
+   - how to test
 
----
-
-## 🧾 Pull Request Process
-
-1. Fork the repo  
-2. Create a branch  
-3. Make changes  
-4. Test locally  
-5. Submit PR  
-
----
-
-## 💡 Final Note
-
-Small, focused contributions are preferred.
+Thanks for building TaskForge with us.

@@ -1,233 +1,141 @@
-# 🚀 TaskForge CLI
+# TaskForge CLI
 
-> Run, simulate, and debug distributed task executors — locally or via a backend.
+TaskForge is a lightweight task execution runtime with a public Go SDK for building and sharing executors.
 
----
+It is designed for two use cases:
+- run executors locally for fast development and testing
+- forward tasks to a remote backend from the same CLI
 
-## ⚡ What is this?
+## Why TaskForge
 
-TaskForge CLI is a **developer tool** for experimenting with:
+Task systems are often hard to iterate on because they depend on infrastructure.
+TaskForge lets you build and validate executor logic as plain Go code first, then run it through the same CLI in local or remote mode.
 
-- async task execution  
-- retry / failure behavior  
-- event-driven patterns  
-- executor-based systems  
+## Project Structure
 
-Without needing:
-
-- Kafka  
-- PostgreSQL  
-- Kubernetes  
-
----
-
-## 🧠 Core Idea
-
-TaskForge CLI is built around a **dynamic executor system**.
-
-```bash
-taskforge run <executor_name> --params <file.json>
-```
-
-Executors:
-
-- are registered dynamically  
-- receive JSON input  
-- return structured results  
-
----
-
-## 🧱 Architecture Boundaries
-
-This CLI has **strict responsibilities**:
-
-### 🟢 Local Mode (default)
-
-- Runs executors directly  
-- Acts as a sandbox  
-- No infrastructure required  
-
-### 🔵 Remote Mode (`--remote`)
-
-- Sends tasks to backend API  
-- Streams events  
-- **Must stay thin (no logic)**  
-
----
-
-### ❌ Non-Goals
-
-The CLI does NOT:
-
-- implement orchestration  
-- implement scheduling  
-- manage workers  
-- connect to Kafka  
-- access databases  
-
----
-
-## 📦 Project Structure
-
-```
+```text
 taskforge-cli/
-├── main.go
-├── go.mod
-├── cmd/
-│   ├── root.go
-│   └── run.go
-├── internal/
-│   ├── executor/
-│   │   ├── executor.go
-│   │   └── registry.go
+├── cmd/                     # cobra commands
+├── internal/                # CLI internals and built-ins
+│   ├── client/
 │   ├── executors/
-│   │   └── api_health.go
 │   └── runner/
-│       └── runner.go
+├── pkg/
+│   └── executor/            # public SDK: interface + registry
 ├── examples/
-│   └── api_health.json
+│   ├── api_health.json
+│   └── custom-executor/
+├── CONTRIBUTING.md
 └── README.md
 ```
 
----
+## Public Executor SDK
 
-## ⚙️ Dynamic Executor System
+Import path:
 
-### 1. Executor Interface
+```go
+import "taskforge-cli/pkg/executor"
+```
+
+Interface:
 
 ```go
 type Executor interface {
-    Execute(ctx context.Context, params map[string]any) (any, error)
+    Name() string
+    Execute(ctx context.Context, params map[string]interface{}) (Result, error)
+}
+
+type Result struct {
+    Output  interface{}
+    Success bool
+    Error   string
 }
 ```
 
----
-
-### 2. Registration
+Registry:
 
 ```go
+func Register(e Executor)
+func Get(name string) (Executor, bool)
+func List() []Executor
+```
+
+## Writing an Executor
+
+Example:
+
+```go
+package myexec
+
+import (
+    "context"
+    "fmt"
+
+    "taskforge-cli/pkg/executor"
+)
+
+type HelloExecutor struct{}
+
+func (h *HelloExecutor) Name() string { return "hello" }
+
+func (h *HelloExecutor) Execute(ctx context.Context, params map[string]interface{}) (executor.Result, error) {
+    name, _ := params["name"].(string)
+    if name == "" {
+        name = "world"
+    }
+
+    return executor.Result{
+        Output: map[string]interface{}{"message": fmt.Sprintf("hello, %s", name)},
+        Success: true,
+    }, nil
+}
+
 func init() {
-    executor.Register("api_health", &APIHealthExecutor{})
+    executor.Register(&HelloExecutor{})
 }
 ```
 
----
+See runnable sample: `examples/custom-executor/main.go`.
 
-### 3. Execution
+## CLI Usage
 
-```bash
-taskforge run <executor_name> --params <file.json>
-```
-
----
-
-## 🎯 Example
+Run built-in `api_health` locally:
 
 ```bash
-taskforge run api_health --params examples/api_health.json
-```
-
-### Params
-
-```json
-{
-  "url": "https://google.com",
-  "expected_status": 200
-}
-```
-
-### Output
-
-```json
-{
-  "url": "https://google.com",
-  "status_code": 200,
-  "healthy": true,
-  "latency_ms": 120
-}
-```
-
----
-
-## 🔌 Built-in Executor
-
-### `api_health`
-
-Checks if an API endpoint is healthy.
-
-**Params:**
-
-- `url` (required)
-- `expected_status` (default: 200)
-- `timeout_seconds` (default: 5)
-
----
-
-## 🚀 Quick Start
-
-```bash
-go mod tidy
-
 go run . run api_health --params examples/api_health.json
 ```
 
----
-
-## 🔌 Remote Mode (Gateway)
+Run via remote backend:
 
 ```bash
-go run . run api_health \
-  --params examples/api_health.json \
-  --remote \
-  --api-base-url http://localhost:8080
+go run . run api_health --params examples/api_health.json --remote --api-base-url https://taskforge.kaankarakoc.com
 ```
 
-### Status
+Watch remote task events:
 
-- 🚧 Not fully implemented yet  
-- Designed as a thin API/WebSocket client  
+```bash
+go run . watch --remote --api-base-url https://taskforge.kaankarakoc.com
+```
 
-### Design Rule
+## Built-in Executor
 
-Remote mode:
+`api_health` checks endpoint health.
 
-- does NOT execute tasks  
-- does NOT implement logic  
-- only forwards and observes  
+Params:
+- `url` (required)
+- `expected_status` (optional, default `200`)
+- `timeout_seconds` (optional, default `5`)
 
----
+## External Contributor Workflow
 
-## 🧩 Why this is useful
+1. Implement an executor using `pkg/executor`.
+2. Register it with `executor.Register(...)`.
+3. Run locally in your own Go program, or include it in a TaskForge-based binary.
 
-- test task logic locally  
-- build executors without backend  
-- debug failure scenarios  
-- experiment with distributed system patterns  
+## Development
 
----
+```bash
+go test ./...
+```
 
-## 🚧 Roadmap
-
-- [ ] Retry simulation (fail-rate, backoff)
-- [ ] Event streaming (`watch`)
-- [ ] Remote API integration
-- [ ] Plugin system for executors
-
----
-
-## 🤝 Contributing
-
-Good areas:
-
-- new executors  
-- retry strategies  
-- CLI UX improvements  
-- output formatting  
-
-See `CONTRIBUTING.md`
-
----
-
-## 🔥 TL;DR
-
-TaskForge CLI is a **playground for task execution logic** — without the overhead of distributed systems infrastructure.
+For contribution guidance, see `CONTRIBUTING.md`.

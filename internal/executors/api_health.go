@@ -6,15 +6,23 @@ import (
 	"net/http"
 	"time"
 
-	"taskforge-cli/internal/executor"
+	"taskforge-cli/pkg/executor"
 )
 
 type APIHealthExecutor struct{}
 
-func (e *APIHealthExecutor) Execute(ctx context.Context, params map[string]any) (any, error) {
+func (e *APIHealthExecutor) Name() string {
+	return "api_health"
+}
+
+func (e *APIHealthExecutor) Execute(ctx context.Context, params map[string]interface{}) (executor.Result, error) {
 	urlValue, ok := params["url"].(string)
 	if !ok || urlValue == "" {
-		return nil, fmt.Errorf("missing required param: url (string)")
+		err := fmt.Errorf("missing required param: url (string)")
+		return executor.Result{
+			Success: false,
+			Error:   err.Error(),
+		}, err
 	}
 
 	expectedStatus := intValueOrDefault(params["expected_status"], 200)
@@ -25,7 +33,11 @@ func (e *APIHealthExecutor) Execute(ctx context.Context, params map[string]any) 
 
 	req, err := http.NewRequestWithContext(reqCtx, http.MethodGet, urlValue, nil)
 	if err != nil {
-		return nil, fmt.Errorf("build request: %w", err)
+		wrappedErr := fmt.Errorf("build request: %w", err)
+		return executor.Result{
+			Success: false,
+			Error:   wrappedErr.Error(),
+		}, wrappedErr
 	}
 
 	start := time.Now()
@@ -39,7 +51,12 @@ func (e *APIHealthExecutor) Execute(ctx context.Context, params map[string]any) 
 			"latency_ms": latencyMS,
 			"error":      err.Error(),
 		}
-		return result, fmt.Errorf("request failed: %w", err)
+		wrappedErr := fmt.Errorf("request failed: %w", err)
+		return executor.Result{
+			Output:  result,
+			Success: false,
+			Error:   wrappedErr.Error(),
+		}, wrappedErr
 	}
 	defer resp.Body.Close()
 
@@ -51,7 +68,10 @@ func (e *APIHealthExecutor) Execute(ctx context.Context, params map[string]any) 
 		"latency_ms":  latencyMS,
 	}
 
-	return result, nil
+	return executor.Result{
+		Output:  result,
+		Success: true,
+	}, nil
 }
 
 func intValueOrDefault(raw any, fallback int) int {
@@ -68,5 +88,5 @@ func intValueOrDefault(raw any, fallback int) int {
 }
 
 func init() {
-	executor.Register("api_health", &APIHealthExecutor{})
+	executor.Register(&APIHealthExecutor{})
 }
