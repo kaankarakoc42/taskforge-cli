@@ -5,16 +5,17 @@ import (
 	"fmt"
 
 	"github.com/kaankarakoc42/taskforge-sdk/pkg/executor"
+	"github.com/kaankarakoc42/taskforge-sdk/pkg/logger"
 	_ "taskforge-cli/internal/executors"
 )
 
 func Run(ctx context.Context, executorName string, params map[string]any) (any, error) {
-	e, ok := executor.Get(executorName)
-	if !ok {
-		return nil, fmt.Errorf("executor not found: %s", executorName)
-	}
-
-	result, err := e.Execute(ctx, params)
+	result, err := executor.Invoke(ctx, executorName, params, &executor.InvokeOptions{
+		Logger: logger.NewConsoleLogger(),
+		Metadata: &executor.TaskMetadata{
+			TaskType: executorName,
+		},
+	})
 	if err != nil {
 		output := result.Output
 		if output == nil {

@@ -15,10 +15,19 @@ func (e *APIHealthExecutor) Name() string {
 	return "api_health"
 }
 
-func (e *APIHealthExecutor) Execute(ctx context.Context, params map[string]interface{}) (executor.Result, error) {
+func (e *APIHealthExecutor) Execute(goCtx context.Context, params map[string]interface{}) (executor.Result, error) {
+	log := executor.LoggerFromContext(goCtx)
+	log.Debug("api_health started")
+
+	meta, ok := executor.TaskMetadataFromContext(goCtx)
+	if ok && meta.TaskID != "" {
+		log.Debug("task id: " + meta.TaskID)
+	}
+
 	urlValue, ok := params["url"].(string)
 	if !ok || urlValue == "" {
 		err := fmt.Errorf("missing required param: url (string)")
+		log.Error("API health check failed: missing url param")
 		return executor.Result{
 			Success: false,
 			Error:   err.Error(),
@@ -28,7 +37,7 @@ func (e *APIHealthExecutor) Execute(ctx context.Context, params map[string]inter
 	expectedStatus := intValueOrDefault(params["expected_status"], 200)
 	timeoutSeconds := intValueOrDefault(params["timeout_seconds"], 5)
 
-	reqCtx, cancel := context.WithTimeout(ctx, time.Duration(timeoutSeconds)*time.Second)
+	reqCtx, cancel := context.WithTimeout(goCtx, time.Duration(timeoutSeconds)*time.Second)
 	defer cancel()
 
 	req, err := http.NewRequestWithContext(reqCtx, http.MethodGet, urlValue, nil)
@@ -45,6 +54,7 @@ func (e *APIHealthExecutor) Execute(ctx context.Context, params map[string]inter
 	latencyMS := time.Since(start).Milliseconds()
 
 	if err != nil {
+		log.Error("API health check request failed: " + err.Error())
 		result := map[string]any{
 			"url":        urlValue,
 			"healthy":    false,
@@ -66,6 +76,12 @@ func (e *APIHealthExecutor) Execute(ctx context.Context, params map[string]inter
 		"status_code": resp.StatusCode,
 		"healthy":     healthy,
 		"latency_ms":  latencyMS,
+	}
+
+	if healthy {
+		log.Info("API health check completed successfully")
+	} else {
+		log.Error(fmt.Sprintf("API health check completed with mismatch: expected status %d, got %d", expectedStatus, resp.StatusCode))
 	}
 
 	return executor.Result{
